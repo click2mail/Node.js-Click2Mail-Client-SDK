@@ -10,7 +10,6 @@ c2m.addToAddressList("John","Smith4","TEST COMPANY","1235 TEST STREET","APT 3","
 
 function startProcessingRest()
 {
-	/*Unique pdf name for click2mail*/
 			//(pdfFile,docName,docClass,docFormat,contentType,layout,prodTime,envelope,color,paperType,printOption)
 	c2m.createRestJob("test.pdf","TestDoc","Letter 8.5 x 11","PDF","application/PDF","Address on First Page","Next Day","#10 Double Window","Full Color","White 24#","Printing both sides",completedJob)
 }
