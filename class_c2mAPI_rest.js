@@ -5,7 +5,7 @@ function class_c2mAPI_rest(username,passw,mode,autoProcess) {
 this.username = username;
 this.passw = passw;
 this.addressMappingId =2;
-	if(autoProcess ==="undefined")
+	if(autoProcess === undefined)
 	{
 			this.autoProcess =true;
 	}
@@ -13,8 +13,7 @@ this.addressMappingId =2;
 	{
 			this.autoProcess = false;
 	}
-
-
+ 
  if(typeof mode === "undefined") {
 	this.mode = 'stage';
  }
@@ -49,8 +48,6 @@ var addressListBatch = new Array();
 var batchList = new Array();
 
 var docOptions = {pdfFile:"",docName:"",docFormat:"",contentType:"",docClass:"",layout:"",prodTime:"",envelope:"",color:"",paperType:"",printOption:""};
-//createBatch();
-//createDocument('test.pdf');
 
 class_c2mAPI_rest.prototype.setAddressList = function (al,aMId,callBack)
 {
@@ -135,17 +132,27 @@ this.createDocument();
 
 class_c2mAPI_rest.prototype.createDocument = function (callBack)
 {
-	//console.log(auth);
+	console.log("Uploading document");
 	var self = this;
+	var credentials = this.username + ':' + this.passw;
 	var options ={
         url :  this.getRestURL()+ "/molpro/documents/",
 		//port: 443,
 		method: 'POST',
 		 headers: {
-      'Authorization': 'Basic ' + new Buffer(this.username + ':' + this.passw).toString('base64')
-	}};
+      'Authorization': 'Basic ' + Buffer.alloc(credentials.length,credentials).toString('base64'),
+	'Content-Type': 'multipart/form-data'
+	},
+	formData: {
+	 'file':fs.createReadStream(docOptions.pdfFile),
+	 'documentName':docOptions.docName,
+	 'documentClass':docOptions.docClass,
+	 'documentFormat':docOptions.docFormat
+	}
+
+
+};
    
-   //console.log(options);
 var req = request(options, function (err, resp, body) {
   if (err) {
     console.log('Error!');
@@ -154,8 +161,8 @@ var req = request(options, function (err, resp, body) {
 		//console.log(batchID);
     self.documentID = result.document.id.toString();
 	
-	console.log("DOC:" +self.documentID);
-	if(this.autoProcess)
+	console.log("Document ID:" +self.documentID);
+	if(self.autoProcess)
 	{
 	self.createAddressList();
 	}
@@ -169,11 +176,6 @@ var req = request(options, function (err, resp, body) {
 	});
   }
 });
-var form = req.form();
-form.append('file',fs.createReadStream(docOptions.pdfFile), {contentType: docOptions.contentType});
-form.append('documentName',docOptions.docName);
-form.append('documentClass',docOptions.docClass);
-form.append('documentFormat',docOptions.docFormat);
 };
 
 class_c2mAPI_rest.prototype.addToAddressList = function (fname,lname,organization,address1,address2,city,state,zip,country,callBack)
@@ -245,14 +247,16 @@ class_c2mAPI_rest.prototype.createAddressListXML = function ()
 
 class_c2mAPI_rest.prototype.createAddressList = function(callBack)
 {
+	console.log('Uploading address list');
 	self= this;
+	var credentials = this.username + ':' + this.passw;
 	var options ={
         url :  this.getRestURL()+ "/molpro/addressLists/",
 		//port: 443,
 		method: 'POST',
 		 headers: {
-      'Authorization': 'Basic ' + new Buffer(this.username + ':' + this.passw).toString('base64')
-	  ,ContentType: 'application/xml'
+      'Authorization': 'Basic ' + Buffer.alloc(credentials.length,credentials).toString('base64'),
+      'Content-Type': 'application/xml'
 	}};
 	
 	var req = request(options, function (err, resp, body) {
@@ -264,8 +268,8 @@ class_c2mAPI_rest.prototype.createAddressList = function(callBack)
 		//console.log(batchID);
 		self.addressListID = result.addressList.id.toString();
 	
-		console.log("Address List:" + self.addressListID);
-if(this.autoProcess)
+		console.log("Address List ID:" + self.addressListID);
+if(self.autoProcess)
 	{
 	self.createJob();
 	}
@@ -289,11 +293,11 @@ req.end();
 
 class_c2mAPI_rest.prototype.createJob = function(callBack)
 {
+console.log('Creating job');
 self = this;
 var urlencode = require('urlencode');
-	 
- var querystring = "documentClass=" + urlencode.encode(docOptions.docClass);
- querystring +="&layout="+ urlencode.encode(docOptions.layout)	;
+var querystring = "documentClass=" + urlencode.encode(docOptions.docClass);
+querystring +="&layout="+ urlencode.encode(docOptions.layout)	;
 querystring +="&productionTime="+ urlencode.encode(docOptions.prodTime)	;
 querystring +="&envelope="+ urlencode.encode(docOptions.envelope)	;
 querystring +="&color="+ urlencode.encode(docOptions.color)	;
@@ -301,44 +305,31 @@ querystring +="&paperType="+ urlencode.encode(docOptions.paperType)	;
 querystring +="&printOption="+ urlencode.encode(docOptions.printOption)	;
 querystring +="&documentId="+ this.documentID	;
 querystring +="&addressId="+ this.addressListID;
-
-//console.log(querystring);
-//return;
-  
-	
+	var credentials = this.username + ':' + this.passw;
 	var options ={
         url :  this.getRestURL()+ "/molpro/jobs/?" + querystring,
-		//port: 443,
 		method: 'POST',
 		 headers: {
-	   'Authorization': 'Basic ' + new Buffer(this.username + ':' + this.passw).toString('base64')
+	   'Authorization': 'Basic ' + Buffer.alloc(credentials.length,credentials).toString('base64')
 	   ,'Content-Type': 'application/x-www-form-urlencoded'
 	},
-//	 formData: formData
 	};
-   
-   //console.log(options);
-  
-
-   
-   
 var req = request(options, function (err, resp, body) {
   if (err) {
     console.log('Error!');
   } else {
-    	//parseString(body, function (err, result) {
 		//console.log(batchID);
     
 		     parseString(body, function (err, result) {
 			//console.log(body);
 				self.jobID = result.job.id.toString();
-				console.log("JobID:" + self.jobID);
+				console.log("Job ID:" + self.jobID);
 				if(self.jobID == 0)
 				{
 					console.log(body);
 					return;
 				}
-if(this.autoProcess)
+if(self.autoProcess)
 	{
 				self.submitJob();
 	}
@@ -348,16 +339,14 @@ if(this.autoProcess)
 	callBack();
 	}
 				
-	});
-	
-	
-  }
-});
-	
+	}
+  });
+}});
 }
 
 class_c2mAPI_rest.prototype.submitJob = function ()
 {
+console.log('Submitting job');
 self = this;
 var urlencode = require('urlencode');
 	 
@@ -365,19 +354,17 @@ var urlencode = require('urlencode');
  
 
   
-	
+	var credentials = this.username + ':' + this.passw;
 	var options ={
         url :  this.getRestURL()+ "/molpro/jobs/" +this.jobID +'/submit/?' + querystring,
 		//port: 443,
 		method: 'POST',
 		 headers: {
-	   'Authorization': 'Basic ' + new Buffer(this.username + ':' + this.passw).toString('base64')
+	   'Authorization': 'Basic ' + Buffer.alloc(credentials.length,credentials).toString('base64')
 	   ,'Content-Type': 'application/x-www-form-urlencoded'
 	},
-//	 formData: formData
 	};
    
-   //console.log(options);
   
 
    
@@ -388,7 +375,6 @@ var req = request(options, function (err, resp, body) {
   } else {
     	  	
 			parseString(body, function (err, result) {
-		//console.log(batchID);
     
 		      	
 		console.log(result.job.description);
@@ -409,19 +395,17 @@ class_c2mAPI_rest.prototype.checkJob = function (callback)
 {
 
 self = this;	
+	var credentials = this.username + ':' + this.passw;
 	var options ={
         url :  this.getRestURL()+ "/molpro/jobs/" +this.jobID ,
-		//port: 443,
 		method: 'GET',
 		 headers: {
-	   'Authorization': 'Basic ' + new Buffer(this.username + ':' + this.passw).toString('base64')
+	   'Authorization': 'Basic ' + Buffer.alloc(credentials.length,credentials).toString('base64')
 	   ,'Content-Type': 'application/x-www-form-urlencoded'
 	},
-//	 formData: formData
 	};
    
 
-   //console.log(options);
   
 
    
@@ -430,10 +414,6 @@ var req = request(options, function (err, resp, body) {
   if (err) {
     console.log('Error!');
   } else {
-    
-    
-	//		console.log(body);
-			
         if(typeof self.restCallBack !== "undefined") {
 		self.restCallBack(self.jobID,body);
 		self.restCallBack = undefined;
@@ -453,28 +433,18 @@ class_c2mAPI_rest.prototype.checkJobTracking = function (trackType,callback)
 self = this;	
 	var options ={
         url :  this.getRestURL()+ "/molpro/jobs/" +this.jobID +"/tracking?trackingType=" + trackType,
-		//port: 443,
 		method: 'GET',
 		 headers: {
 	   'Authorization': 'Basic ' + new Buffer(this.username + ':' + this.passw).toString('base64')
 	   ,'Content-Type': 'application/x-www-form-urlencoded'
 	},
-//	 formData: formData
 	};
-   
-
-   //console.log(options);
-  
-
    
    
 var req = request(options, function (err, resp, body) {
   if (err) {
     console.log('Error!');
   } else {
-    
-    
-	//		console.log(body);
 			
 	if(typeof callback !== "undefined") {
 		callback(self.jobID,body);
@@ -491,19 +461,12 @@ class_c2mAPI_rest.prototype.checkJobTrackingUnique = function (trackType,callbac
 self = this;	
 	var options ={
         url :  this.getRestURL()+ "/molpro/jobs/" +this.jobID +"/uniqueid/tracking?trackingType=" + trackType,
-		//port: 443,
 		method: 'GET',
 		 headers: {
 	   'Authorization': 'Basic ' + new Buffer(this.username + ':' + this.passw).toString('base64')
 	   ,'Content-Type': 'application/x-www-form-urlencoded'
 	},
-//	 formData: formData
 	};
-   
-
-   //console.log(options);
-  
-
    
    
 var req = request(options, function (err, resp, body) {
@@ -511,9 +474,6 @@ var req = request(options, function (err, resp, body) {
     console.log('Error!');
   } else {
     
-    
-	//		console.log(body);
-			
 	if(typeof callback !== "undefined") {
 		callback(self.jobID,body);
 	}
@@ -542,11 +502,8 @@ barcodeQuery = "barcode=" + barcode;
 	   'Authorization': 'Basic ' + new Buffer(this.username + ':' + this.passw).toString('base64')
 	   ,'Content-Type': 'application/x-www-form-urlencoded'
 	},
-//	 formData: formData
 	};
    
-
-   //console.log(options);
   var f= "";
   
   if(filename !="undefined" && filename !="")
@@ -571,8 +528,6 @@ var req = request(options, function (res) {
 		callback(self.jobID,"Completed Download");
 	}
 	
-	
-  
 });
 	
 }
@@ -585,17 +540,14 @@ self = this;
   
 	var options ={
         url :  this.getRestURL()+ "/molpro/jobs/" +this.jobID +"/uniqueid/returnReceipt?uniqueId" + uniqueID,
-		//port: 443,
 		method: 'GET',
 		 headers: {
 	   'Authorization': 'Basic ' + new Buffer(this.username + ':' + this.passw).toString('base64')
 	   ,'Content-Type': 'application/x-www-form-urlencoded'
 	},
-//	 formData: formData
 	};
    
 
-   //console.log(options);
   var f= "";
   
   if(filename !="undefined" && filename !="")
